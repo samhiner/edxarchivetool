@@ -23,11 +23,17 @@ request {
 NUM_LESSONS = 32; 
 //In the URL https://docs.google.com/spreadsheets/d/hello/edit#gid=0, SHEET_ID would be hello
 SHEET_ID = '1Gb8IV2CdVWGZi6Mn9Wove2NcNCndEWtxPaaVZBbDmDw';
+//this is defined by you so random people can't run your script without knowing the password
+//(it's low security but this is a low risk situation)
+PASSWORD = 'INSERT_A_PASSWORD'
 
-function handleRequest(request) {
-  //TODO remove this
-  request = 'lesson:1.1,problem:1,type:submit,possTries:4,possPoints:1,score:1';
-  request = parseRequest(request)
+function doGet(request) {
+  if (request['parameter']['password'] != PASSWORD) {
+    Logger.log('Error: Wrong password.');
+    return ContentService.createTextOutput('Error: Wrong password.')
+  }
+  
+  request = parseRequest(request['parameter']['request']);
     
   var spreadsheet = SpreadsheetApp.openById(SHEET_ID);
   var sheet = spreadsheet.getSheets()[0];
@@ -35,8 +41,8 @@ function handleRequest(request) {
   
   var lessonIndex = getLesson(data, request);
   if (lessonIndex === -1) {
-    Logger.log('Error: Lesson was not found.')
-    return;
+    Logger.log('Error: Lesson was not found.');
+    return ContentService.createTextOutput('Error: Lesson was not found.');
   }
   
   var currProb = data[lessonIndex][request['problem'] - 1];
@@ -46,16 +52,17 @@ function handleRequest(request) {
     sheet.getRange(lessonIndex + 1, request['problem']).setValue(cellFillerData);
     currProb = cellFillerData;
   } else if (currProb == undefined || currProb == '') {
-    Logger.log('Error: Invalid question number.')
-    return;
+    Logger.log('Error: Invalid question number.');
+    return ContentService.createTextOutput('Error: Invalid question number.');
   }
   
   if (request['type'] === 'getTries') {
-    return currProb.split('/')[0]
+    return ContentService.createTextOutput(String(currProb.split('/')[0]) + ',' + String(currProb.split(', ')[1].split('/')[0]));
   } else if (request['type'] === 'submit') {
     var cellData = prepareSubmit(currProb, request);
 
     sheet.getRange(lessonIndex + 1, request['problem']).setValue(cellData);
+    return ContentService.createTextOutput('Success!');
   }
   
 }
