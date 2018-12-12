@@ -8,6 +8,27 @@ for (var x = 0; x < buttons.length; x++) {
 	buttons[x].onclick = function(event) {
 		check(event);
 	};
+
+	//if button is supposed to stay on keep it on
+	if (buttons[x].disabled == false) {
+		keepSubmit(buttons[x]);
+	}
+}
+
+//make sure that the submit does not get greyed out onclick
+//for some reason it happens with questions with multiple responses
+function keepSubmit(element) {
+	var responses = element.parentElement.parentElement.parentElement.children[0].children;
+	//sometimes the questions are stored inside an extra span
+	if (responses.length === 1) {
+		responses = responses[0].children
+	}
+
+	var responseArea = element.parentElement.parentElement.parentElement.children[0];
+
+	responseArea.onclick = function(event) {
+		element.disabled = false;
+	};
 }
 
 //get info about a question that is needed for lcoating it in the sheet
@@ -38,7 +59,7 @@ function getLastNum(string) {
 //make question reflect the "tries" and "score" data in the spreadsheet
 function updateFormat(element) {
 	var lesson, problem, possPoints, possTries = getQuestionInfo(element);
-	var args = 'lesson:' + lesson + ',problem:' + problem + ',type:getTries,possTries:' + possTries + ',possPoints:' + possPoints + '&password=' + PASSWORD;
+	var args = 'lesson:' + lesson + ',problem:' + problem + ',type:getTries,possTries:' + possTries + ',possPoints:' + possPoints + '&password=' + window.PASSWORD;
 
 	$.ajax({
 		url: 'https://script.google.com/macros/s/AKfycbyPdkk_VoJjlOolZChvmekYU70SHgDJy73Vn8PBDHR5Zl-UvuV9/exec?method=handleRequest&request=' + args,
@@ -48,6 +69,7 @@ function updateFormat(element) {
 			if (tries == possTries || score == possPoints) {
 				console.log('WOAHHHHHHHH')
 				element.disabled = true;
+				element.onclick = '';
 				//TODO add tries and score info
 			}
 		}
@@ -80,38 +102,55 @@ function check(event) {
 			}
 			x++;
 		}
-		console.log('Score: ' + score + '/' + data.answers.length)
+		//TODO change x so it supports when score doesn't match questions
+		console.log('Score: ' + score + '/' + x)
 
 		submit(score, event.srcElement.parentElement);	
 	});
 }
 
 function getChoices(element) {
-	var questions = element.parentElement.parentElement.parentElement.children[0].children[0].children
-	
-	for (var x = 0; x < questions.length; x++) {
-		console.log('some stuff for radio. doesnt work for text tho')
-		/*if (questions[x].nodeName === 'DIV') {
-			console.log(questions[x].attributes);
-			attribute = questions[x].firstElementChild.firstElementChild.attributes[0].value
-			$('fieldset[aria-describedby*="' + attribute + '"] input:radio').on('change', function() {
-				var value = $(this).val();
-			});
-		}*/
+	var questions = element.parentElement.parentElement.parentElement.children[0].children;
+	//sometimes the questions are stored inside an extra span
+	if (questions.length === 1) {
+		questions = questions[0].children
 	}
-	console.log(element.attributes)
+	
+	var choices = [];
+	for (var x = 0; x < questions.length; x++) {
+		if (questions[x].nodeName === 'DIV') {
+			if (questions[x].attributes[0].value === 'wrapper-problem-response') {
+				attribute = questions[x].firstElementChild.firstElementChild.attributes[0].value
+				var checked = false;
+				$('fieldset[aria-describedby*="' + attribute + '"] input:radio').each(function() {
+					if (this.checked === true) {
+						choices.push(this.value)
+						checked = true;
+					}
+				});
+				if (!checked) {
+					choices.push('None')
+				}
+			} else if (questions[x].attributes[0].value === 'inline') {
+				choices.push(questions[x].firstElementChild.firstElementChild.firstElementChild.value);
+			}
+		}
+	}
+
+	console.log(choices);
+	return choices;
 }
 
 //submits the new data to the google sheet that keeps track of progress
 function submit(score, element) {
 	//get the arguments for the URL
 	var lesson, problem, possPoints, possTries = getQuestionInfo(element);
-	var args = 'lesson:' + lesson + ',problem:' + problem + ',type:submit,possTries:' + possTries + ',possPoints:' + possPoints + ',score:' + score + '&password=' + PASSWORD;
+	var args = 'lesson:' + lesson + ',problem:' + problem + ',type:submit,possTries:' + possTries + ',possPoints:' + possPoints + ',score:' + score + '&password=' + window.PASSWORD;
 
 	//submit the data
 	$.ajax({
 		url: 'https://script.google.com/macros/s/AKfycbyPdkk_VoJjlOolZChvmekYU70SHgDJy73Vn8PBDHR5Zl-UvuV9/exec?method=handleRequest&request=' + args,
-		dataType: 'jsonp',
+		//TODO do i need dataType: 'jsonp',
 		success: function(data) {
 			if (data[0] == 'E') {
 				alert('Upload failed with "' + data + '"');
