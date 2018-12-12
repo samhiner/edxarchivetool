@@ -21,10 +21,14 @@ request {
 
 //I don't use sheet length because that includes my stats below the lessons
 NUM_LESSONS = 32; 
-//In the URL https://docs.google.com/spreadsheets/d/hello/edit#gid=0, it would be hello
+//In the URL https://docs.google.com/spreadsheets/d/hello/edit#gid=0, SHEET_ID would be hello
 SHEET_ID = '1Gb8IV2CdVWGZi6Mn9Wove2NcNCndEWtxPaaVZBbDmDw';
 
 function handleRequest(request) {
+  //TODO remove this
+  request = 'lesson:1.1,problem:1,type:submit,possTries:4,possPoints:1,score:1';
+  request = parseRequest(request)
+    
   var spreadsheet = SpreadsheetApp.openById(SHEET_ID);
   var sheet = spreadsheet.getSheets()[0];
   var data = sheet.getDataRange().getValues();
@@ -35,49 +39,59 @@ function handleRequest(request) {
     return;
   }
   
-  var currProb = data[lessonIndex][request['problem']];
+  var currProb = data[lessonIndex][request['problem'] - 1];
   
-  if (prob === '') {
-    //TODO this
-    prob.write('0/' + request['possPoints'] + 's, 0/' + request['possTries'] + 'a')
+  if (currProb == 'N') {
+    var cellFillerData = '0/' + request['possPoints'] + 's, 0/' + request['possTries'] + 'a';
+    sheet.getRange(lessonIndex + 1, request['problem']).setValue(cellFillerData);
+    currProb = cellFillerData;
+  } else if (currProb == undefined || currProb == '') {
+    Logger.log('Error: Invalid question number.')
+    return;
   }
   
   if (request['type'] === 'getTries') {
     return currProb.split('/')[0]
   } else if (request['type'] === 'submit') {
-    var cellData = prepareSubmit(currProb);
-    
-    if (cellData != false) {
-      sheet.getRange(lessonIndex,request['problem']).setValue(cellData);
-      return cellData;
-    } else {
-      return false;
-    }
+    var cellData = prepareSubmit(currProb, request);
+
+    sheet.getRange(lessonIndex + 1, request['problem']).setValue(cellData);
   }
   
 }
 
-function prepareSubmit(prob, coords, sheet) {
-  if (request['score'] > prob.split('/')[0]) {
-    prob = prob.split(', ');
+function prepareSubmit(prob, request) {
+  prob = prob.split(', ');
     
-    prob[0] = prob[0].split('/');
-    prob[1] = prob[1].split('/');
-    
-    prob[0][0] = request['score']
-    prob[1][0] = prob[1][0] + 1;
-    
-    prob[0] = prob[0].join('/');
-    prob[1] = prob[1].join('/');
-
-    prob = prob.join(', ');
-    
-    return prob;
+  prob[0] = prob[0].split('/');
+  prob[1] = prob[1].split('/');
+  
+  if (request['score'] > prob[0][0]) {
+    prob[0][0] = request['score'];
   } else {
     Logger.log('Score is not highest score on this problem');
-    return false;
   }
+  prob[1][0] = parseInt(prob[1][0]) + 1;
   
+  prob[0] = prob[0].join('/');
+  prob[1] = prob[1].join('/');
+  
+  prob = prob.join(', ');
+  
+  return prob;
+}
+
+function parseRequest(request) {
+  request = request.split(',');
+  var newRequest = {};
+
+  for (var x = 0; x < request.length; x++) {
+    request[x] = request[x].split(':');
+    newRequest[request[x][0]] = request[x][1];
+  }
+  newRequest['problem'] = parseInt(newRequest['problem']) + 1;
+  
+  return newRequest;
 }
 
 //find the row for the submitted lesson's data
