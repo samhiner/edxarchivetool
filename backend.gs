@@ -25,7 +25,7 @@ NUM_LESSONS = 32;
 SHEET_ID = '1Gb8IV2CdVWGZi6Mn9Wove2NcNCndEWtxPaaVZBbDmDw';
 //this is defined by you so random people can't run your script without knowing the password
 //(it's low security but this is a low risk situation)
-PASSWORD = 'INSERT_A_PASSWORD'
+PASSWORD = 'jellyfish';
 
 function doGet(request) {
   if (request['parameter']['password'] != PASSWORD) {
@@ -42,6 +42,7 @@ function doGet(request) {
   var lessonIndex = getLesson(data, request);
   if (lessonIndex === -1) {
     Logger.log('Error: Lesson was not found.');
+    Logger.log('  Lesson:' + request['lesson']);
     return ContentService.createTextOutput('Error: Lesson was not found.');
   }
   
@@ -57,7 +58,8 @@ function doGet(request) {
   }
   
   if (request['type'] === 'getTries') {
-    return ContentService.createTextOutput(String(currProb.split('/')[0]) + ',' + String(currProb.split(', ')[1].split('/')[0]));
+    result = String(currProb.split('/')[0]) + ',' + String(currProb.split(', ')[1].split('/')[0]);
+    return ContentService.createTextOutput('updateFormatExec("' + result + '")').setMimeType(ContentService.MimeType.JAVASCRIPT);
   } else if (request['type'] === 'submit') {
     var cellData = prepareSubmit(currProb, request);
 
