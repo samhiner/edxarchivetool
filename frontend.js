@@ -1,26 +1,30 @@
 //TODO make it so the script can handle a bad password
-//TODO make it so you can do problems in reverse
 
 PASSWORD = 'INSERT_PASSWORD_HERE';
 problemButtons = [];
 
-//setup
-var buttons = document.getElementsByClassName('submit btn-brand');
-for (var x = 0; x < buttons.length; x++) {
-	buttons[x].disabled = false;
-	updateFormatWrapper(buttons[x]);
+startArchiveTool();
 
-	var currButton = buttons[x];
+function startArchiveTool() {
+	if (document.title.split(' ')[1] !== 'Lecture' && document.title.split(' ')[1] !== 'Example') {
+		var buttons = document.getElementsByClassName('submit btn-brand');
+		for (var x = 0; x < buttons.length; x++) {
+			buttons[x].disabled = false;
+			updateFormatWrapper(buttons[x]);
 
-	//make button
-	buttons[x].onclick = function(event) {
-		//temporary measure so you can't click after you submit but before the script loads
-		//to re-enable the button. Later in script it is evaluated if script should be re-
-		//enabled onclick
-		keepSubmit(currButton, false);
+			var currButton = buttons[x];
 
-		check(event);
-	};
+			//make button
+			buttons[x].onclick = function(event) {
+				//temporary measure so you can't click after you submit but before the script loads
+				//to re-enable the button. Later in script it is evaluated if script should be re-
+				//enabled onclick
+				keepSubmit(currButton, false);
+
+				check(event);
+			};
+		}
+	}
 }
 
 //make sure that the submit does not get greyed out onclick
@@ -129,7 +133,6 @@ function check(event) {
 
 		var x = 0;
 		var score = 0;
-		var correctAnswers = [];
 		for (var answerIndex in data.answers) {
 			var answer = data.answers[answerIndex];
 
@@ -137,7 +140,7 @@ function check(event) {
 				answer = answer[0];
 			}
 
-			correctAnswers.push(answer);
+			console.log('Choice:', choices[x], 'Answer:', answer)
 
 			if (choices[x] == answer) {
 				score += 1;
@@ -145,7 +148,7 @@ function check(event) {
 			x++;
 		}
 		//TODO change x so it supports when score doesn't match questions
-		alert('Score: ' + score + '/' + x + '. The correct answers were: ' + correctAnswers)
+		alert('Score: ' + score + '/' + x + '.');
 
 		submit(score, event.srcElement.parentElement);
 	});
@@ -158,10 +161,13 @@ function check(event) {
 function getChoices(element, path) {
 	var questions = element.parentElement.parentElement.parentElement.children
 
+	console.log(questions);
+	console.log(path);
+
 	if (path === 2) {
-		questions = questions[2].children[0].children[0].children;
+		questions = questions[2].children[0];
 	} else if (path === 1) {
-		questions = questions[0].children[0].children;
+		questions = questions[0].children;
 	}
 
 	var choices = [];
