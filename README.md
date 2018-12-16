@@ -7,7 +7,9 @@ track your progress. You can inject the frontend.js here into DevTools (or use a
 <a href='https://chrome.google.com/webstore/detail/custom-javascript-for-web/poakhlngfciodnhlhhgnaaelnpjljija?hl=en'>chrome extension</a>
 to make this automatic), create a Google Script with the backend.gs code in it,
 and create a spreadsheet which is organized as shown below, you can track your
-progress on that spreadsheet.
+progress on that spreadsheet. If you want a percent completion stat, just visit
+every question page and the questions will populate as not yet tried on the
+spreadsheet.
 
 ## Spreadsheet Organization
 The first row is left empty. You can put titles there if you want. The first 
