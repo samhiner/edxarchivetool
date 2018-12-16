@@ -25,46 +25,47 @@ NUM_LESSONS = 32;
 SHEET_ID = '1Gb8IV2CdVWGZi6Mn9Wove2NcNCndEWtxPaaVZBbDmDw';
 //this is defined by you so random people can't run your script without knowing the password
 //(it's low security but this is a low risk situation)
-PASSWORD = 'jellyfish';
+PASSWORD = 'INSERT_PASSWORD_HERE';
 
 function doGet(request) {
   if (request['parameter']['password'] != PASSWORD) {
     Logger.log('Error: Wrong password.');
-    return ContentService.createTextOutput('Error: Wrong password.')
+    return ContentService.createTextOutput('alert("Upload Error: Wrong password.")')
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
-  
-  request = parseRequest(request['parameter']['request']);
+    
+  args = parseRequest(request['parameter']['request']);
     
   var spreadsheet = SpreadsheetApp.openById(SHEET_ID);
   var sheet = spreadsheet.getSheets()[0];
   var data = sheet.getDataRange().getValues();
   
-  var lessonIndex = getLesson(data, request);
+  var lessonIndex = getLesson(data, args);
   if (lessonIndex === -1) {
     Logger.log('Error: Lesson was not found.');
-    Logger.log('  Lesson:' + request['lesson']);
-    return ContentService.createTextOutput('Error: Lesson was not found.');
+    Logger.log('  Lesson:' + args['lesson']);
+    return ContentService.createTextOutput('alert("Upload Error: Lesson was not found.")')
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
   
-  var currProb = data[lessonIndex][request['problem'] - 1];
+  var currProb = data[lessonIndex][args['problem'] - 1];
   
-  if (currProb == 'N') {
-    var cellFillerData = '0/' + request['possPoints'] + 's, 0/' + request['possTries'] + 'a';
-    sheet.getRange(lessonIndex + 1, request['problem']).setValue(cellFillerData);
+  if (currProb == '' || currProb == undefined) {
+    var cellFillerData = '0/' + args['possPoints'] + 's, 0/' + args['possTries'] + 'a';
+    sheet.getRange(lessonIndex + 1, args['problem']).setValue(cellFillerData);
     currProb = cellFillerData;
-  } else if (currProb == undefined || currProb == '') {
-    Logger.log('Error: Invalid question number.');
-    return ContentService.createTextOutput('Error: Invalid question number.');
   }
   
-  if (request['type'] === 'getTries') {
+  if (args['type'] === 'getTries') {
     result = String(currProb.split('/')[0]) + ',' + String(currProb.split(', ')[1].split('/')[0]);
-    return ContentService.createTextOutput('updateFormatExec("' + result + '")').setMimeType(ContentService.MimeType.JAVASCRIPT);
-  } else if (request['type'] === 'submit') {
-    var cellData = prepareSubmit(currProb, request);
+    return ContentService.createTextOutput('updateFormatExec("' + result + '", ' + request['parameter']['button'] + ')')
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  } else if (args['type'] === 'submit') {
+    var cellData = prepareSubmit(currProb, args);
 
-    sheet.getRange(lessonIndex + 1, request['problem']).setValue(cellData);
-    return ContentService.createTextOutput('Success!');
+    sheet.getRange(lessonIndex + 1, args['problem']).setValue(cellData);
+    return ContentService.createTextOutput('console.log("Upload Success!");')
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
   
 }

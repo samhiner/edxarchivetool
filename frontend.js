@@ -1,15 +1,24 @@
 //TODO make it so the script can handle a bad password
+//TODO make it so you can do problems in reverse
 
-PASSWORD = 'jellyfish';
+PASSWORD = 'INSERT_PASSWORD_HERE';
+problemButtons = [];
 
 //setup
 var buttons = document.getElementsByClassName('submit btn-brand');
 for (var x = 0; x < buttons.length; x++) {
 	buttons[x].disabled = false;
-	updateFormat(buttons[x]);
+	updateFormatWrapper(buttons[x]);
+
+	var currButton = buttons[x];
 
 	//make button
 	buttons[x].onclick = function(event) {
+		//temporary measure so you can't click after you submit but before the script loads
+		//to re-enable the button. Later in script it is evaluated if script should be re-
+		//enabled onclick
+		keepSubmit(currButton, false);
+
 		check(event);
 	};
 }
@@ -29,15 +38,20 @@ function keepSubmit(element, keep = true) {
 	if (keep) {
 		responseArea.onclick = function(event) {
 			element.disabled = false;
-			console.log('click-on')
 		};
 	} else {
-		responseArea.onclick = function() { console.log('click-off') };
+		responseArea.onclick = function(event) {
+			element.disabled = true;
+		};
 	}
 }
 
 //get info about a question that is needed for locating it in the sheet
 function getQuestionInfo(element) {
+	if (element.className === 'submit-attempt-container') {
+		element = element.firstElementChild;
+	}
+
 	var lesson = document.title.split(' ')[0];
 	var problem = parseInt(getLastNum(element.parentElement.parentElement.parentElement.previousElementSibling.previousElementSibling.firstChild.data));
 	var possPoints = parseInt(getLastNum(element.parentElement.parentElement.parentElement.previousElementSibling.firstChild.data));
@@ -56,30 +70,40 @@ function getLastNum(string) {
 	}
 }
 
-//THIS IS REALLY BROKEN because I can't figure out how to get it to not have a cross-origin error or execute the result.
-//make question reflect the "tries" and "score" data in the spreadsheet
-function updateFormat(element) {
+function updateFormatExec(data, buttonIndex) {
+	var element = window.problemButtons[buttonIndex];
 	var questionInfo = getQuestionInfo(element);
-	var args = 'lesson:' + questionInfo[0] + ',problem:' + questionInfo[1] + ',type:getTries,possTries:' + questionInfo[3] + ',possPoints:' + questionInfo[2] + '&password=' + window.PASSWORD;
 
+	[score, tries] = data.split(',');
+	//if you have maxed out tries or score
+	if (tries == questionInfo[3] || score == questionInfo[2]) {
+		element.disabled = true;
+		keepSubmit(element, false);
+		//TODO add tries and score info
+	} else {
+		//if button is supposed to stay on keep it on
+		element.disabled = false;
+		keepSubmit(element);
+	}
+}
+
+//make question reflect the "tries" and "score" data in the spreadsheet
+function updateFormatWrapper(element) {
+	if (window.problemButtons.indexOf(element) === -1) {
+		window.problemButtons.push(element)
+	}
+
+	var questionInfo = getQuestionInfo(element);
+
+	var args = 'lesson:' + questionInfo[0] + ',problem:' + questionInfo[1] + ',type:getTries,possTries:' + questionInfo[3] + ',possPoints:' + questionInfo[2]
+		+ '&button=' + window.problemButtons.indexOf(element) + '&password=' + window.PASSWORD;
+
+	window.currProblemButton = element;
+
+	//this ajax request executes a script to run "updateFormatExec()" and gives that function the data it needs
 	$.ajax({
-		url: 'https://script.google.com/macros/s/AKfycbyPdkk_VoJjlOolZChvmekYU70SHgDJy73Vn8PBDHR5Zl-UvuV9/exec?method=handleRequest&request=' + args,
-		datatype: 'jsonp',
-		callback: function() { console.log('hello') },
-		success: function(data) {
-			[score, tries] = data.split(',');
-			//if you have maxed out tries or score
-			if (tries == questionInfo[3] || score == questionInfo[2]) {
-				console.log('WOAHHHHHHHH')
-				element.disabled = true;
-				keepSubmit(element, false);
-				//TODO add tries and score info
-			} else {
-				console.log('LLLLLLL')
-				//if button is supposed to stay on keep it on
-				keepSubmit(element);
-			}
-		},
+		url: 'https://script.google.com/macros/s/AKfycbyPdkk_VoJjlOolZChvmekYU70SHgDJy73Vn8PBDHR5Zl-UvuV9/exec?request=' + args,
+		dataType: 'jsonp'
 	});
 }
 
@@ -94,7 +118,6 @@ function check(event) {
 	} else {
 		problemCode = problemCode.id;
 		var path = 2;
-		console.log('GO');
 	}
 
 	problemCode = problemCode.split('_')[1];
@@ -104,11 +127,9 @@ function check(event) {
 	function(data) {
 		var choices = getChoices(event.srcElement.parentElement, path);
 
-		console.log(choices);
-		console.log(data.answers);
-
 		var x = 0;
 		var score = 0;
+		var correctAnswers = [];
 		for (var answerIndex in data.answers) {
 			var answer = data.answers[answerIndex];
 
@@ -116,15 +137,17 @@ function check(event) {
 				answer = answer[0];
 			}
 
+			correctAnswers.push(answer);
+
 			if (choices[x] == answer) {
 				score += 1;
 			}
 			x++;
 		}
 		//TODO change x so it supports when score doesn't match questions
-		console.log('Score: ' + score + '/' + x)
+		alert('Score: ' + score + '/' + x + '. The correct answers were: ' + correctAnswers)
 
-		submit(score, event.srcElement.parentElement);	
+		submit(score, event.srcElement.parentElement);
 	});
 }
 
@@ -133,7 +156,6 @@ function check(event) {
 //differently because the DOM is trying to process a bug but that is just
 //conjecture
 function getChoices(element, path) {
-	console.log(element.attributes)
 	var questions = element.parentElement.parentElement.parentElement.children
 
 	if (path === 2) {
@@ -175,16 +197,13 @@ function submit(score, element) {
 	//submit the data
 	$.ajax({
 		url: 'https://script.google.com/macros/s/AKfycbyPdkk_VoJjlOolZChvmekYU70SHgDJy73Vn8PBDHR5Zl-UvuV9/exec?method=handleRequest&request=' + args,
-		//TODO do i need dataType: 'jsonp',
-		success: function(data) {
-			if (data[0] === 'E') {
-				alert('Upload failed with "' + data + '"');
-			}
+		dataType: 'jsonp',
+		complete: function() {
+			//update the question UI to reflect the data
+			updateFormatWrapper(element);
 		}
 	});
 
 	//TODO get a wrong answer notification to pop up
 
-	//update the question UI to reflect the data
-	updateFormat(element);
 }
