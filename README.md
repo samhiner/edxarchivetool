@@ -40,26 +40,15 @@ Current Grade is percent correct on attempted questions (multi point questions a
 ## Bugs
 This was made for my personal use, so it is *far* from production grade. Here
 are some bugs:
-- The frontend script breaks if given an incorrect password.
-- If you do not do problems in order (1, 2, 3, etc), they will not submit. This
-	does not matter if you refresh.
-- It doesn't find your answer half of the time.
-- Make submit not go grey when you type
+- MID: The UI is very bad. Boxes from edX pop up asking you to refresh and it doesn't update visible metrics like if you got it right.
+- LOW: The submit button sometimes gets disabled until you click on the problem (needs my onlick to get re-enabled)
+	- And if you get it right and click, sometimes submit gets re-enabled.
+- LOW: For Calc AB 1.1, if I answer problem 6 wrong just once, it greys out until I refresh.
 
 ## Improvement Plans
 - Fill in a/b points and c/d tries in the edX UI.
 - Make it so you don't have to premake a spreadsheet, there will be a script to make one.
 - Turn this into a fully fledged Chrome Extension.
-- Make it so if you visit the video first in a page the whole thing doesn't break.
-- Make it actually find your answer.
-
-Just started working on this again. I'd like to turn this into a larger
-project, but it concerns me that sometimes paths through the DOM will
-change without any indication of why, so this would be very hard to
-make production-grade. I still want to do this project, but I don't
-know how to fix that problem. If it is with unreliability in the
-DOM, I could work around that. I am going to think up some solutions
-for now and implement a plan once I have one.
 
 ## License
 This is licensed under the MIT license, so you may use it how you like, as long

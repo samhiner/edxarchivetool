@@ -29,7 +29,7 @@ function startArchiveTool() {
 			//enabled onclick
 			keepSubmit(currButton, false);
 
-			check(event);
+			checkAnswer(event);
 		};
 	}
 }
@@ -46,15 +46,10 @@ function keepSubmit(element, keep = true) {
 
 	var responseArea = element.parentElement.parentElement.parentElement.children[0];
 
-	if (keep) {
-		responseArea.onclick = function(event) {
-			element.disabled = false;
-		};
-	} else {
-		responseArea.onclick = function(event) {
-			element.disabled = true;
-		};
-	}
+	responseArea.onclick = function(event) {
+		//if "keep" is true, make button not disabled; else, disable it.
+		element.disabled = !keep;
+	};
 }
 
 //get info about a question that is needed for locating it in the sheet
@@ -119,7 +114,7 @@ function updateFormatWrapper(element) {
 }
 
 //when submit is clicked, this compares your answer to the correct answer and runs submit().
-function check(event) {
+function checkAnswer(event) {
 	//find the code for the answer URL
 	var problemCode = event.srcElement.parentElement.parentElement.parentElement.parentElement;
 
@@ -131,12 +126,16 @@ function check(event) {
 		var path = 2;
 	}
 
+	console.log('Current DOM setup for problem code is: ' + String(path))
+
 	problemCode = problemCode.split('_')[1];
 
 	//get the answer
 	$.get('https://courses.edx.org/courses/course-v1:RiceX+AdvCAL.1x+2015_T3/xblock/block-v1:RiceX+AdvCAL.1x+2015_T3+type@problem+block@' + problemCode + '/handler/xmodule_handler/problem_show',	
 	function(data) {
-		var choices = getChoices(event.srcElement.parentElement, path);
+		var choices = getQuestionChoices(event.srcElement.parentElement, path);
+
+		console.log(choices)
 
 		var x = 0;
 		var score = 0;
@@ -145,6 +144,10 @@ function check(event) {
 
 			if (typeof answer === 'object') {
 				answer = answer[0];
+			}
+
+			if (answer == undefined) {
+				console.error('Failed to get user answer.')
 			}
 
 			console.log('Choice:', choices[x], 'Answer:', answer)
@@ -161,44 +164,66 @@ function check(event) {
 	});
 }
 
-//path: there are two paths, 1 and 2 and the one you use depends on how
-//the html happened to be organized on this load. Pretty sure it loads
-//differently because the DOM is trying to process a bug but that is just
-//conjecture
-function getChoices(element, path) {
-	var questions = element.parentElement.parentElement.parentElement.children
+//this finds the individual problems in a question and calls getChoicesInsideQuestion() to get the answer choices.
+function getQuestionChoices(element) {
+	var fullQuestionElement = element
 
-	console.log(questions);
-	console.log(path);
-
-	if (path === 2) {
-		questions = questions[2].children[0].children[0].children;
-	} else if (path === 1) {
-		questions = questions[0].children[0].children;
+	choices = [];
+	while (element.className != 'problem') {
+		element = element.parentElement;
 	}
+	element = element.firstElementChild;
 
-	var choices = [];
-	for (var x = 0; x < questions.length; x++) {
-		if (questions[x].nodeName === 'DIV') {
-			if (questions[x].attributes[0].value === 'wrapper-problem-response') {
-				attribute = questions[x].firstElementChild.firstElementChild.attributes[0].value
-				var checked = false;
-				$('fieldset[aria-describedby*="' + attribute + '"] input:radio').each(function() {
-					if (this.checked === true) {
-						choices.push(this.value)
-						checked = true;
-					}
-				});
-				if (!checked) {
-					choices.push('None')
-				}
-			} else if (questions[x].attributes[0].value === 'inline') {
-				choices.push(questions[x].firstElementChild.firstElementChild.firstElementChild.value);
-			}
+	var foundQuestionWrapper = false;
+	for (var x = 0; x < element.children.length; x++) {
+		if (element.children[x].nodeName === 'DIV') {
+			element = element.children[x];
+			foundQuestionWrapper = true;
+			break;
 		}
 	}
 
+	if (foundQuestionWrapper === false) {
+		console.error('Could not find question wrapper. Debugging tool below:');
+		console.log(fullQuestionElement)
+	}
+
+	if (element.nodeName == 'SPAN') {
+		for (var x = 0; x < element.children.length; x++) {
+			if (element.children[x].className === 'wrapper-problem-response' || element.children[x].className === 'inline') {
+				choices.push(getChoicesInsideQuestion(element.children[x], fullQuestionElement));
+			}
+		}
+	} else {
+		choices.push(getChoicesInsideQuestion(element, fullQuestionElement));
+	}
 	return choices;
+}
+
+//this gets the answer choice from a problem (a question can have multiple problems in it)
+function getChoicesInsideQuestion(question, element) {
+	question = question.firstElementChild;
+
+	//if it is a write in question
+	if (Array.from(question.classList).indexOf('formulaequationinput') !== -1 || Array.from(question.classList).indexOf('text-input-dynamath') !== -1) {
+		while (question.nodeName !== 'INPUT') {
+			question = question.firstElementChild;
+		}
+		return question.value;
+	//if it is a multiple choice question
+	} else if (Array.from(question.classList).indexOf('choicegroup') !== -1) {
+		var fieldsetAttribute = question.firstElementChild.attributes[0].nodeValue;
+		var finalAnswer = 'None';
+		$('fieldset[aria-describedby*="' + fieldsetAttribute + '"] input:radio').each(function() {
+			if (this.checked) {
+				finalAnswer = this.value;
+			}
+		});
+		return finalAnswer;
+	} else {
+		console.error('Could not find choices in HTML DOM. Debugging tool below:')
+		console.log(element.attributes)
+	}
 }
 
 //submits the new data to the google sheet that keeps track of progress
