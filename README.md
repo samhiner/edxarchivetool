@@ -44,6 +44,7 @@ are some bugs:
 - If you do not do problems in order (1, 2, 3, etc), they will not submit. This
 	does not matter if you refresh.
 - It doesn't find your answer half of the time.
+- Make submit not go grey when you type
 
 ## Improvement Plans
 - Fill in a/b points and c/d tries in the edX UI.
@@ -51,6 +52,14 @@ are some bugs:
 - Turn this into a fully fledged Chrome Extension.
 - Make it so if you visit the video first in a page the whole thing doesn't break.
 - Make it actually find your answer.
+
+Just started working on this again. I'd like to turn this into a larger
+project, but it concerns me that sometimes paths through the DOM will
+change without any indication of why, so this would be very hard to
+make production-grade. I still want to do this project, but I don't
+know how to fix that problem. If it is with unreliability in the
+DOM, I could work around that. I am going to think up some solutions
+for now and implement a plan once I have one.
 
 ## License
 This is licensed under the MIT license, so you may use it how you like, as long

@@ -1,29 +1,36 @@
 //TODO make it so the script can handle a bad password
 
-PASSWORD = 'INSERT_PASSWORD_HERE';
+PASSWORD = 'arbys';
 problemButtons = [];
 
 startArchiveTool();
 
+var currTitle = document.title;
+window.setInterval(function() {
+	if (document.title !== currTitle) {
+		startArchiveTool();
+		currTitle = document.title;
+	}
+}, 100);
+
 function startArchiveTool() {
-	if (document.title.split(' ')[1] !== 'Lecture' && document.title.split(' ')[1] !== 'Example') {
-		var buttons = document.getElementsByClassName('submit btn-brand');
-		for (var x = 0; x < buttons.length; x++) {
-			buttons[x].disabled = false;
-			updateFormatWrapper(buttons[x]);
+	var buttons = document.getElementsByClassName('submit btn-brand');
 
-			var currButton = buttons[x];
+	for (var x = 0; x < buttons.length; x++) {
+		buttons[x].disabled = false;
+		updateFormatWrapper(buttons[x]);
 
-			//make button
-			buttons[x].onclick = function(event) {
-				//temporary measure so you can't click after you submit but before the script loads
-				//to re-enable the button. Later in script it is evaluated if script should be re-
-				//enabled onclick
-				keepSubmit(currButton, false);
+		var currButton = buttons[x];
 
-				check(event);
-			};
-		}
+		//make button
+		buttons[x].onclick = function(event) {
+			//temporary measure so you can't click after you submit but before the script loads
+			//to re-enable the button. Later in script it is evaluated if script should be re-
+			//enabled onclick
+			keepSubmit(currButton, false);
+
+			check(event);
+		};
 	}
 }
 
@@ -58,7 +65,7 @@ function getQuestionInfo(element) {
 
 	var lesson = document.title.split(' ')[0];
 	var problem = parseInt(getLastNum(element.parentElement.parentElement.parentElement.previousElementSibling.previousElementSibling.firstChild.data));
-	var possPoints = parseInt(getLastNum(element.parentElement.parentElement.parentElement.previousElementSibling.firstChild.data));
+	var possPoints = parseInt(getLastNum(element.parentElement.parentElement.parentElement.previousElementSibling.innerText));
 	var possTries = parseInt(getLastNum(element.nextElementSibling.childNodes[0].data));
 
 	return [lesson, problem, possPoints, possTries];
@@ -165,9 +172,9 @@ function getChoices(element, path) {
 	console.log(path);
 
 	if (path === 2) {
-		questions = questions[2].children[0];
+		questions = questions[2].children[0].children[0].children;
 	} else if (path === 1) {
-		questions = questions[0].children;
+		questions = questions[0].children[0].children;
 	}
 
 	var choices = [];
