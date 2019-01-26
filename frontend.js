@@ -174,18 +174,22 @@ function getQuestionChoices(element) {
 	}
 	element = element.firstElementChild;
 
-	var foundQuestionWrapper = false;
-	for (var x = 0; x < element.children.length; x++) {
-		if (element.children[x].nodeName === 'DIV') {
-			element = element.children[x];
-			foundQuestionWrapper = true;
-			break;
+	if (element.children.length !== 1 || element.children[0].nodeName !== 'SPAN') {
+		var foundQuestionWrapper = false;
+		for (var x = 0; x < element.children.length; x++) {
+			if (element.children[x].nodeName === 'DIV') {
+				element = element.children[x];
+				foundQuestionWrapper = true;
+				break;
+			}
 		}
-	}
 
-	if (foundQuestionWrapper === false) {
-		console.error('Could not find question wrapper. Debugging tool below:');
-		console.log(fullQuestionElement)
+		if (foundQuestionWrapper === false) {
+			console.error('Could not find question wrapper. Debugging tool below:');
+			console.log(fullQuestionElement.attributes);
+		}
+	} else {
+		element = element.firstElementChild;
 	}
 
 	if (element.nodeName == 'SPAN') {
@@ -204,14 +208,16 @@ function getQuestionChoices(element) {
 function getChoicesInsideQuestion(question, element) {
 	question = question.firstElementChild;
 
+	var inClassList = inAList(Array.from(question.classList));
+
 	//if it is a write in question
-	if (Array.from(question.classList).indexOf('formulaequationinput') !== -1 || Array.from(question.classList).indexOf('text-input-dynamath') !== -1) {
+	if (inClassList('formulaequationinput', 'text-input-dynamath', 'text-input-dynamath', 'textline')) {
 		while (question.nodeName !== 'INPUT') {
 			question = question.firstElementChild;
 		}
 		return question.value;
 	//if it is a multiple choice question
-	} else if (Array.from(question.classList).indexOf('choicegroup') !== -1) {
+	} else if (inClassList('choicegroup')) {
 		var fieldsetAttribute = question.firstElementChild.attributes[0].nodeValue;
 		var finalAnswer = 'None';
 		$('fieldset[aria-describedby*="' + fieldsetAttribute + '"] input:radio').each(function() {
@@ -220,9 +226,26 @@ function getChoicesInsideQuestion(question, element) {
 			}
 		});
 		return finalAnswer;
+	} else if (inClassList('capa_inputtype')) {
+		console.error('Edit the code so that one of the following atttributes is seen as a textbox or multiple choice:');
+		console.log(question.classList);
 	} else {
-		console.error('Could not find choices in HTML DOM. Debugging tool below:')
-		console.log(element.attributes)
+		console.error('Could not find choices in HTML DOM. Debugging tool below:');
+		console.log(element.attributes);
+		console.log('Attributes list:');
+		console.log(question.classList);
+	}
+}
+
+function inAList(list) {
+	return function inSpecificList(...attrs) {
+		var inList = false;
+		for (var x = 0; x < attrs.length; x++) {
+			if (list.indexOf(attrs[x]) !== -1) {
+				inList = true;
+			}
+		}
+		return inList;
 	}
 }
 
@@ -241,7 +264,5 @@ function submit(score, element) {
 			updateFormatWrapper(element);
 		}
 	});
-
-	//TODO get a wrong answer notification to pop up
 
 }

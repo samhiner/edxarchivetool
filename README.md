@@ -27,7 +27,7 @@ on Google Sheets:
 
 **edX Progress:**<br>
 `=(COUNTIF(B1:Z31, "<>") - COUNTIF(B1:Z31, "0*"))/COUNTIF(B1:Z31, "<>")`<br>
-edX Progress is the number of correct questions divided by all questions (if you get 1 point on a 2 point question it is factored as half a correct question).<br><br>
+edX Progress is the number of correct questions divided by all questions (if you get 1 point on a 2 point question it is factored as half a correct question in order to make my life easier).<br><br>
 
 **Total Progress:**<br>
 `=SUM(ARRAYFORMULA(IFERROR(IF(LEFT(RIGHT(B2:Z31, LEN(B2:Z31) - (FIND(", ", B2:Z31) + 1))) = "0", 0, 1), "N")))/COUNT(ARRAYFORMULA(IFERROR(IF(LEFT(RIGHT(B2:Z31, LEN(B2:Z31) - (FIND(", ", B2:Z31) + 1))) = "0", 0, 1), "N")))`<br>
