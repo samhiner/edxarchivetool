@@ -1,11 +1,12 @@
 # edxarchivetool
 
-IMPORTANT: This is all specific to RiceX's Preparing for the AP Calculus AB Exam.
-I will update here if I end up abstracting it. You could try to use it for other
-courses, but I don't know what will and wont work (once I add this feature, the
-program will only be able to find question pages on the Calc course, but it will
-be easy to remove that bit, you will just have to directly navigate to every page
-with questions).
+This is currently  specific to RiceX's Preparing for the AP Calculus AB Exam
+Part 1. I am planning on abstracting it to part 2 in the near future and maybe
+to all courses in general.. You could try to use it for other courses, but I
+don't know what will and wont work (once I add this feature, the program will
+only be able to find question pages on the Calc course, but it will be easy to
+remove that bit, you will just have to directly navigate to every page with
+questions).
 
 ## General
 This is a software that I created to make taking archived courses on edX easier.
@@ -46,6 +47,7 @@ are some bugs:
 - LOW: For Calc AB 1.1, if I answer problem 6 wrong just once, it greys out until I refresh.
 
 ## Improvement Plans
+- Make this compatible with Calc AB Part 2 (and then any course).
 - Fill in a/b points and c/d tries in the edX UI.
 - Make it so you don't have to premake a spreadsheet, there will be a script to make one.
 - Turn this into a fully fledged Chrome Extension.
